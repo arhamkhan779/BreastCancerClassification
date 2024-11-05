@@ -14,7 +14,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Load your model (make sure the model is in the correct path)
-MODEL_PATH = 'path/to/your/model.h5'
+MODEL_PATH = 'artifacts\\training\\model.h5'
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Class labels
