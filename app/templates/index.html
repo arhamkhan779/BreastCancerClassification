@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Classification</title>
+
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('pp.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 192, 203, 0.5); /* Soft pink overlay */
+        }
+
+        .container {
+            position: relative;
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.8); /* White background with transparency */
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #f04e84;  /* Dark pink */
+        }
+
+        .description {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #ff66b2;  /* Soft pink */
+        }
+
+        /* Upload Section */
+        .upload-section {
+            margin-top: 30px;
+            padding: 30px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .drop-zone {
+            border: 3px dashed #f04e84;  /* Dark pink dashed border */
+            border-radius: 10px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 192, 203, 0.3); /* Soft pink background */
+        }
+
+        .drop-zone:hover {
+            background: rgba(255, 192, 203, 0.5); /* Lighter pink on hover */
+            border-color: #f04e84;
+        }
+
+        .drop-zone.active {
+            background: rgba(255, 192, 203, 0.6);
+            border-color: #f04e84;
+        }
+
+        .drop-zone p {
+            font-size: 18px;
+            color: #f04e84;  /* Dark pink text */
+            margin: 0;
+        }
+
+        /* Prediction Section */
+        .prediction {
+            margin-top: 30px;
+            padding: 15px;
+            font-size: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .prediction p {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .result-text {
+            font-size: 24px;
+            color: #f04e84; /* Dark pink for results */
+            margin-top: 10px;
+        }
+
+        .error-text {
+            font-size: 24px;
+            color: #ff4d4d; /* Red error text */
+            margin-top: 10px;
+        }
+
+        /* Display uploaded image */
+        .uploaded-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .drop-zone {
+                padding: 20px;
+            }
+
+            .prediction {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>  <!-- Overlay to ensure readability -->
+    
+    <div class="container">
+        <h1>Breast Cancer Classification</h1>
+        <p class="description">Upload an image to predict whether it is Benign, Malignant, or Normal.</p>
+        
+        <div class="upload-section">
+            <!-- Hidden file input -->
+            <input type="file" id="imageUpload" accept="image/*" style="display:none;" />
+            <!-- Drag and Drop Zone -->
+            <div class="drop-zone" id="dropZone">
+                <p>Drag and Drop an image here, or click to upload</p>
+            </div>
+        </div>
+
+        <!-- Uploaded Image Section -->
+        <div class="prediction" id="predictionSection" style="display: none;">
+            <p><strong>Prediction:</strong></p>
+            <p id="predictionText" class="result-text"></p>
+            <img id="uploadedImage" class="uploaded-image" src="" alt="Uploaded Image" />
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const dropZone = document.getElementById('dropZone');
+        const predictionSection = document.getElementById('predictionSection');
+        const predictionText = document.getElementById('predictionText');
+        const uploadedImage = document.getElementById('uploadedImage');
+
+        // Handle Drag & Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('active');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                uploadImage(file);
+            }
+        });
+
+        // Handle File Upload
+        dropZone.addEventListener('click', () => {
+            imageUpload.click();
+        });
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                uploadImage(file);
+            }
+        });
+
+        // Function to upload the image to the server
+        function uploadImage(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show preview of uploaded image
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                uploadedImage.src = reader.result;
+            }
+            reader.readAsDataURL(file);
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.prediction) {
+                    // Show the prediction
+                    predictionText.textContent = data.prediction;
+                    predictionSection.style.display = 'block';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+    </script>
+
+</body>
+</html>
